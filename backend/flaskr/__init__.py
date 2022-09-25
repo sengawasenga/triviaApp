@@ -240,14 +240,15 @@ def create_app(test_config=None):
         body = request.get_json()
         previous_questions = body.get('previous_questions', None)
         quiz_category = body.get('quiz_category', None)
+        quiz_category_id = int(quiz_category['id'])
 
 
         # we can now use the quiz category to get all current questions
         
         current_questions_query = Question.query.all()
 
-        if quiz_category is not None:
-            category_id = get_category_by_name(quiz_category)
+        if quiz_category_id > 0:
+            category_id = quiz_category_id
             current_questions_query = Question.query.filter(Question.category == category_id)
 
         current_questions = [question.format() for question in current_questions_query]
@@ -255,12 +256,11 @@ def create_app(test_config=None):
         # since we have the current questions, we can now have available questions
         # these links helped me a lot to achieve what I wanted
         # https://www.w3schools.com/python/gloss_python_array_remove.asp
-        # https://stackoverflow.com/questions/522563/accessing-the-index-in-for-loops
         value_to_remove = []
         
         if len(previous_questions) > 0:
             for question_id in previous_questions:
-                for index, question in enumerate(current_questions):
+                for question in current_questions:
                     if question['id'] == question_id:
                         value_to_remove.append(question)
                 
