@@ -256,17 +256,17 @@ def create_app(test_config=None):
         # these links helped me a lot to achieve what I wanted
         # https://www.w3schools.com/python/gloss_python_array_remove.asp
         # https://stackoverflow.com/questions/522563/accessing-the-index-in-for-loops
-        index_to_remove = []
+        value_to_remove = []
         
         if len(previous_questions) > 0:
             for question_id in previous_questions:
                 for index, question in enumerate(current_questions):
                     if question['id'] == question_id:
-                        index_to_remove.append(index)
+                        value_to_remove.append(question)
                 
         
-            for index in index_to_remove:
-                current_questions.pop(index)
+            for value in value_to_remove:
+                current_questions.remove(value)
 
 
         # from above, it's now clear that the current_questions is actually the available questions
@@ -277,9 +277,10 @@ def create_app(test_config=None):
         if len(current_questions) > 0:
             next_question_index = randrange(len(current_questions))
 
-
-        # the next question is now provided, we can easily return it back
-        nextQuestion = current_questions[next_question_index]
+            nextQuestion = current_questions[next_question_index]
+        else :
+            nextQuestion = {}
+        
 
         return jsonify({
             'question': nextQuestion
