@@ -33,16 +33,6 @@ def dictionary_format(selection):
     return selection_dictionary
 
 
-# this function get a specific category by his name then return his id
-def get_category_by_name(category_name):
-    category = Category.query.filter(Category.type == category_name).one_or_none()
-    if category is None:
-        abort(404)
-    
-    return category.id
-
-
-
 def create_app(test_config=None):
     # create and configure the app
     app = Flask(__name__)
@@ -52,10 +42,6 @@ def create_app(test_config=None):
     # @TODO: Set up CORS. Allow '*' for origins. Delete the sample route after completing the TODOs
     # """
     CORS(app)
-
-    # """
-    # @TODO: Use the after_request decorator to set Access-Control-Allow
-    # """
 
     # CORS Headers
     @app.after_request
@@ -99,6 +85,27 @@ def create_app(test_config=None):
             'category': category.format()
         })
 
+    # this endpoint creates a new category
+    @app.route('/categories', methods=['POST'])
+    def create_category():
+        body = request.get_json()
+
+        name_input = body.get('type', None)
+
+        try:
+            category = Category(type=name_input)
+            category.insert()
+
+            return jsonify(
+                {
+                    "success": True,
+                    "created": category.id
+                }
+            )
+
+        except:
+            abort(422)
+
 
     # this endpoint retrieves every questions paginated by 10 questions each page
     @app.route('/questions', methods=['GET'])
@@ -121,9 +128,24 @@ def create_app(test_config=None):
                 "questions": current_questions,
                 "total_questions": len(Question.query.all()),
                 "categories": categories_dictionary,
-                "currentCategory": "null"
+                "currentCategory": "All"
             }
         )
+    
+    # this endpoint get a specific question based on his id
+    @app.route('/questions/<int:question_id>', methods=['GET'])
+    def get_specific_question(question_id):
+        question = Question.query.filter(Question.id == question_id).one_or_none()
+
+        if question is None:
+            abort(404)
+        
+        
+
+        return jsonify({
+            'success': True,
+            'question': question.format()
+        })
 
     
 
@@ -133,10 +155,6 @@ def create_app(test_config=None):
         try:
             question = Question.query.filter(
                 Question.id == question_id).one_or_none()
-
-            if question is None:
-                # unable to find resource
-                abort(404)
 
             question.delete()
             
@@ -155,7 +173,7 @@ def create_app(test_config=None):
 
     # this endpoint creates a new question
     @app.route('/questions', methods=['POST'])
-    def create_new_question():
+    def create_question():
         body = request.get_json()
 
         question_input = body.get("question", None)
@@ -194,7 +212,7 @@ def create_app(test_config=None):
 
             selection = Question.query.filter(Question.question.ilike(f'%{search_term}%')).all()
 
-            if len(selection) == 0:
+            if selection is None:
                 abort(404)
 
             current_questions = paginate_questions(request, selection)
@@ -203,7 +221,7 @@ def create_app(test_config=None):
                 "success": True,
                 "questions": current_questions,
                 "total_questions": len(selection),
-                "currentCategory": "null"
+                "currentCategory": "All"
             })
         
         except:
@@ -222,12 +240,13 @@ def create_app(test_config=None):
             abort(404)
 
         current_questions = paginate_questions(request, selection)
+        category = Category.query.filter(Category.id == category_id).one_or_none().format()
 
         return jsonify({
             "success": True,
             "questions": current_questions,
             "total_questions": len(selection),
-            "currentCategory": "null"
+            "currentCategory": category['type']
         })
 
 
@@ -236,59 +255,61 @@ def create_app(test_config=None):
     def next_question():
         
         # from the body, we get previous questions which is nothing but a list of questions id
-        # and the quiz category
+        # and the quiz category that is such a dictionary of category id and category type
         body = request.get_json()
         previous_questions = body.get('previous_questions', None)
         quiz_category = body.get('quiz_category', None)
-        quiz_category_id = int(quiz_category['id'])
 
 
-        # we can now use the quiz category to get all current questions
+        try:
+            # we can now use the quiz category to get all current questions
+            current_questions_query = Question.query.all()
+
+            if quiz_category is not None :
+                quiz_category_id = int(quiz_category['id'])
+
+                if quiz_category_id > 0:
+                    current_questions_query = Question.query.filter(Question.category == quiz_category_id).all()
+  
+
+            current_questions = [question.format() for question in current_questions_query]
+
+            # since we have the current questions, we can now have available questions
+            # these links helped me a lot to achieve what I wanted
+            # https://www.w3schools.com/python/gloss_python_array_remove.asp
+            value_to_remove = []
+            
+            if len(previous_questions) > 0:
+                for question_id in previous_questions:
+                    for question in current_questions:
+                        if question['id'] == question_id:
+                            value_to_remove.append(question)
+                    
+            
+                for value in value_to_remove:
+                    current_questions.remove(value)
+
+
+            # from above, it's now clear that the current_questions is actually the available questions
+            # we did great, we can now randomly choose the question to send back
+            # to do so, this article helped to figure out 
+            # https://stackoverflow.com/questions/3996904/generate-random-integers-between-0-and-9
+            
+            if len(current_questions) > 0:
+                next_question_index = randrange(len(current_questions))
+
+                nextQuestion = current_questions[next_question_index]
+            else :
+                nextQuestion = None
+            
+
+            return jsonify({
+                'question': nextQuestion
+            })
         
-        current_questions_query = Question.query.all()
-
-        if quiz_category_id > 0:
-            category_id = quiz_category_id
-            current_questions_query = Question.query.filter(Question.category == category_id)
-
-        current_questions = [question.format() for question in current_questions_query]
-
-        # since we have the current questions, we can now have available questions
-        # these links helped me a lot to achieve what I wanted
-        # https://www.w3schools.com/python/gloss_python_array_remove.asp
-        value_to_remove = []
+        except:
+            abort(422)
         
-        if len(previous_questions) > 0:
-            for question_id in previous_questions:
-                for question in current_questions:
-                    if question['id'] == question_id:
-                        value_to_remove.append(question)
-                
-        
-            for value in value_to_remove:
-                current_questions.remove(value)
-
-
-        # from above, it's now clear that the current_questions is actually the available questions
-        # we did great, we can now randomly choose the question to send back
-        # to do so, this article helped to figure out 
-        # https://stackoverflow.com/questions/3996904/generate-random-integers-between-0-and-9
-        
-        if len(current_questions) > 0:
-            next_question_index = randrange(len(current_questions))
-
-            nextQuestion = current_questions[next_question_index]
-        else :
-            nextQuestion = {}
-        
-
-        return jsonify({
-            'question': nextQuestion
-        })
-        
-
-
-
 
     # this is just for error handlers for all expected errors
 
@@ -310,14 +331,12 @@ def create_app(test_config=None):
             422,
         )
 
-    # the bad request error handler
-    @app.errorhandler(400)
-    def bad_request(error):
+
         return jsonify({"success": False, "error": 400, "message": "Bad request"}), 400
 
     # the method not allowed error handler
     @app.errorhandler(405)
-    def not_found(error):
+    def method_not_allowed(error):
         return (
             jsonify({"success": False, "error": 405,
                     "message": "Method not allowed"}),

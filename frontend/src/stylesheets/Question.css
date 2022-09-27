@@ -3,14 +3,48 @@
   flex-direction: row;
 }
 
+.question-view h2 {
+  margin-bottom: 1.3rem;
+}
+
 .categories-list {
   flex-basis: 25%;
   flex-shrink: 2;
+  padding-left: 5%
+}
+
+.categories-list li, .categories-list h2 {
+  text-align: left;
+}
+
+.categories-list li {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 12px 15px;
+  border-radius: 12px;
+  background-color: transparent;
+  transition: .3s ease;
+}
+
+.categories-list li:hover {
+  background-color: #eee;
+}
+.categories-list li.active {
+  background-color: #ddd
+}
+
+.categories-list li img {
+  height: 20px;
+  width:auto;
+  margin-left: 10px;
 }
 
 .categories-list > form {
-  width: 60%;
+  width: 80%;
+  margin: 40px 0 0 0;
 }
+
 
 .questions-list {
   flex-basis: 75%;
@@ -19,9 +53,18 @@
 
 .Question-holder {
   padding: 10px 20px;
-  border: 2px black solid;
+  border: 1px rgba(0,0,0,.3) solid;
   text-align: left;
-  margin: 7px;
+  margin: 0 25px 25px 25px;
+  border-radius: 12px;
+  background-color: transparent;
+  transition: .3s ease;
+}
+
+.Question-holder:hover {
+  background-color: rgba(0,0,0,.1);
+  border-color: transparent;
+  transform: translateY(-5px)
 }
 
 .Question-status {
@@ -31,6 +74,11 @@
   width: 200px;
   align-items: center;
   justify-content: space-between;
+}
+
+.Question-status img {
+  height:20px;
+  width: auto;
 }
 
 .Question {
@@ -54,16 +102,17 @@
 }
 
 span.page-num {
-  margin: 5px;
+  margin: 5px 8px;
   padding-bottom: 50px;
   /* color: blue; */
   font-weight: bolder;
   text-decoration: underline;
+  cursor: pointer;
   font-size: 16px;
 }
 
 span.page-num.active {
-  color: blue;
+  color: dodgerblue;
 }
 
 img.category {

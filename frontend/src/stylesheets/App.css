@@ -1,12 +1,24 @@
+
 .App-header {
   background-color: #222;
   color: white;
   display: flex;
   justify-content: space-between;
-  height: 75px;
+  align-items: center;
+  height: 35px;
+  margin-bottom: 1rem;
   padding: 20px;
   padding-right: 40%;
   padding-left: 5%;
+}
+
+.App-header h1, h2 {
+  margin: 0;
+  cursor: pointer;
+}
+
+.App-header h2 {
+  font-size: 1.1rem
 }
 
 .App-header > h1 {
